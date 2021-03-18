@@ -21,8 +21,6 @@
             }
             });
   	</script>
-  		<div align="center">
-	  		<h1>
 	  		
 	  		<?php
 		  	
@@ -37,23 +35,28 @@
 			$ab_pis = "SELECT * FROM acc_pis";
 			$er_pis = mysqli_query($db,$ab_pis);
 			$row_pis = mysqli_fetch_object($er_pis);
-			echo $row_pis->pis_name;
-
-
-	?>  		
-  			</h1>
-  		</div>
-  		<hr>
-  		<div align="center">
-  			<button onClick="window.location.reload();">Refresh Page</button>
-  			<button onClick="window.location.reload();">Drehkreuz öffnen</button>
-  			<button onClick="window.location.reload();">Drehkreuz sperren</button>
-  		</div>
-  		<hr><br>
+			
   		
-  		<iframe src="upload.php" width="100%" height="200" style="border:1px solid black;"></iframe>
-  		<br><br>
-  		<iframe src="activity.php" width="100%" height="300" style="border:1px solid black;"></iframe>
+  		if($row_pis->pis_type == 5)
+			{
+				echo '<iframe src="locker.php" width="100%" height="900" style="border:0px;"></iframe>
+				<iframe src="upload.php" width="100%" height="200" style="border:1px solid black;"></iframe>';
+			}else
+			{
+				echo '<div align="center"><h1>'.$row_pis->pis_name.'</h1>
+  		</div><hr></div>
+				<div align="center">
+					<button onClick="window.location.reload();">Refresh Page</button>
+					<button onClick="window.location.reload();">Drehkreuz öffnen</button>
+						<button onClick="window.location.reload();">Drehkreuz sperren</button>
+				</div>
+				<hr><br>
+  		
+				<iframe src="upload.php" width="100%" height="200" style="border:1px solid black;"></iframe>
+				<br><br>
+				<iframe src="activity.php" width="100%" height="300" style="border:1px solid black;"></iframe>';
+			}
+  ?>
 	</body>
 </html>
 

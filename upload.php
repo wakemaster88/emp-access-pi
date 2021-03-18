@@ -7,140 +7,220 @@
     <body bgcolor="#ffffff">
 	
 		<?php
-	
-			include('dbconnect_online.php');
 			include('dbconnect.php');
-			echo $database_info;
-			echo " <--> ";
-			echo $database_info2;
-			echo "<hr>";
 			$timestamp = time();
 
-			//Connection to Pi information
+// Connection to local Pi information
 			$ab_pis = "SELECT * FROM acc_pis";
 			$er_pis = mysqli_query($db,$ab_pis);
 			$row_pis = mysqli_fetch_object($er_pis);
+			if($row_pis->pis_in != 0)
+			{
+				$access = $row_pis->pis_in;
+			}else
+			{
+				$access = $row_pis->pis_in;
+			}
+			
+			$ab_since = "SELECT * FROM acc_tickets ORDER BY tic_version DESC LIMIT 1";
+			$er_since = mysqli_query($db, $ab_since);
+			$row_since = mysqli_fetch_object($er_since);
+			$since = $row_since->tic_version;
+			$since = str_replace(" ", "%20",$since);
+			
+			//echo $since;
+			
+// Display connections
+			echo $database_info;
+			echo " <--> ";
+			echo "API to Cloud Database";
+			echo "<hr>";
 
-			//Drehkreuz cloud Öffnung
-			if($row_pis->pis_task == 1)
+
+// Get PI information from cloud server
+			$json_pi = file_get_contents('http://'.$row_pis->pis_location.'.emp-access.de/api_pi_get.php?token='.$row_pis->pis_token.'&id='.$row_pis->pis_cloud_id.'');
+			$json_pi = json_decode($json_pi, true);
+
+			if($json_pi['pis_version'] > $row_pis->pis_version)
+			{
+				// Update local pi information
+				$status = "UPDATE acc_pis SET 
+				pis_name = '".$json_pi['pis_name']."',
+				pis_type = '".$json_pi['pis_type']."',
+				pis_in = '".$json_pi['pis_in']."',
+				pis_active = '".$json_pi['pis_active']."',
+				pis_version = '".$json_pi['pis_version']."',
+				pis_out = '".$json_pi['pis_out']."',
+				pis_task = '".$json_pi['pis_task']."'
+				WHERE pis_cloud_id = '".$json_pi['pis_id']."'";
+				$update = mysqli_query($db,$status);
+				
+				echo 'Updated PI information!<br>';
+			}
+				
+			//Turnstile cloud opening
+			if($json_pi['pis_task'] == 1)
 			{
 				$command = escapeshellcmd('python3 /home/pi/Desktop/buzzer.py');
 				shell_exec($command);
 				$command = escapeshellcmd('python3 /home/pi/Desktop/relais.py');
 				shell_exec($command);
-				$status = "UPDATE pis SET pis_task = 0 WHERE pis_id = ".$row_pis->pis_id."";
-				$update = mysqli_query($db_on,$status);
+				
+				// Update local pi information
+				$status = "UPDATE acc_pis SET 
+				pis_task = '0'
+				WHERE pis_cloud_id = '".$json_pi['pis_id']."'";
+				$update = mysqli_query($db,$status);
+				
 			}
-	
-			// Upload scans
+
+
+// Upload pi information to cloud server
+			$url = 'http://twincable.emp-access.de/api_post_pis.php';
+			$ch = curl_init($url);
+			
+			$ab_upload = "SELECT * FROM acc_pis";
+			$er_upload = mysqli_query($db, $ab_upload);
+			$row_upload = mysqli_fetch_object($er_upload);
+			$data = array(
+				'pis_id' => $row_pis->pis_cloud_id,
+				'pis_task' => $row_pis->pis_task,
+				'pis_update' => $timestamp,
+				'pis_firmware' => $row_pis->pis_firmware,
+				);
+			
+			$scans = json_encode(array("pis" => $data));
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $scans);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			$result = curl_exec($ch);
+			curl_close($ch);
+			
+			if($result == 1)
+			{
+				echo "Uploaded PI information!<br>";
+			}		
+			
+			
+// Get tickets from cloud server
+			$json_tickets = file_get_contents('http://'.$row_pis->pis_location.'.emp-access.de/api_tickets_get.php?token='.$row_pis->pis_token.'&access='.$access.'&since='.$since.'');
+			$json_tickets = json_decode($json_tickets, true);
+			
+			print_r($json_tickets);
+			
+			foreach($json_tickets as $ticket)
+			{
+				$ab_check = "SELECT * FROM acc_tickets WHERE tic_cloud_id = '".$ticket['tic_id']."'";
+				$er_check = mysqli_query($db,$ab_check);
+				$num_check = mysqli_num_rows($er_check);
+				
+				if($num_check == 0)
+				{
+					$quer4=mysqli_query($db,"INSERT INTO acc_tickets 
+					(tic_cloud_id, tic_qr, tic_rfid, tic_user, tic_start, tic_end, tic_access, tic_name, tic_valid) 
+					VALUES (
+					'".$ticket['tic_id']."',
+					'".$ticket['tic_qr']."',
+					'".$ticket['tic_rfid']."',
+					'".$ticket['tic_user']."',
+					'".$ticket['tic_start']."',
+					'".$ticket['tic_end']."',
+					'".$ticket['tic_access']."',
+					'".$ticket['tic_name']."',
+					'".$ticket['tic_valid']."')" );
+					
+					echo "Downloaded 1 new Ticket: - QR:".$ticket['tic_qr']." - RFID:".$ticket['tic_rfid']." - User:".$ticket['tic_user']." - Start:".$ticket['tic_start']." - End:".$ticket['tic_end']." - Access:".$ticket['tic_access']." - Valid:".$ticket['tic_valid']."<br> - Version:".$ticket['tic_version']."<br>";
+					
+				}else
+				{
+					$status = "UPDATE acc_tickets SET 
+					tic_qr = '".$ticket['tic_qr']."',
+					tic_rfid = '".$ticket['tic_rfid']."',
+					tic_user = '".$ticket['tic_user']."',
+					tic_start = '".$ticket['tic_start']."',
+					tic_end = '".$ticket['tic_end']."',
+					tic_access = '".$ticket['tic_access']."',
+					tic_name = '".$ticket['tic_name']."',
+					tic_valid = '".$ticket['tic_valid']."'
+					WHERE tic_cloud_id = '".$ticket['tic_id']."'";
+					$update = mysqli_query($db,$status);
+					
+					echo "<br>Ticket erfolgreich lokal aktualisiert!";
+				}
+				
+			}
+				
+
+// Upload scans to cloud server
+			$url = 'http://twincable.emp-access.de/api_post_scans.php';
+			$ch = curl_init($url);
+			$i = 0;
+			
 			$ab_upload = "SELECT * FROM acc_scans WHERE sca_upload = 0";
 			$er_upload = mysqli_query($db, $ab_upload);
 			while($row_upload = mysqli_fetch_object($er_upload))
 			{
-		
-				$quer2=mysqli_query($db_on,"INSERT INTO scans (sca_code, sca_location, sca_scan_time, sca_grant)
-				VALUES ('".$row_upload->sca_code."', '".$row_upload->sca_location."', '".$row_upload->sca_scan_time."', '".$row_upload->sca_grant."')" );
-
-				$quer3=mysqli_query($db,"UPDATE acc_scans SET sca_upload = '1' WHERE sca_id = '".$row_upload->sca_id."'");
-
-				echo "Uploaded 1 Scan<br>";
+				$data = array(
+					'sca_id' => $row_upload->sca_cloud_id,
+					'sca_code' => $row_upload->sca_code,
+					'sca_location' => $row_upload->sca_location,
+					'sca_scan_time' => $row_upload->sca_scan_time,
+					'sca_grant' => $row_upload->sca_grant
+					);
+					
+				$i++;
 			}
 			
-			$ab_check = "SELECT * FROM acc_tickets ORDER BY tic_version DESC LIMIT 1";
-			$er_check = mysqli_query($db,$ab_check);
-			$row_check = mysqli_fetch_object($er_check);
+			$scans = json_encode(array("scans" => $data));
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $scans);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			$result = curl_exec($ch);
+			curl_close($ch);
 			
-			// Update tickets	
-			$ab_tickets = "SELECT * FROM tickets WHERE tic_access = ".$row_pis->pis_id." AND tic_version > '".$row_check->tic_version."'";
-			$er_tickets = mysqli_query($db_on,$ab_tickets);
-			while($row_tickets = mysqli_fetch_object($er_tickets))
+			if($result == 1)
 			{
-				echo $row_tickets->tic_version;
-				$ab_check = "SELECT * FROM acc_tickets WHERE tic_qr = '".$row_tickets->tic_qr."'";
-				$er_check = mysqli_query($db,$ab_check);
-				$num_check = mysqli_num_rows($er_check);
-				$row_check = mysqli_fetch_object($er_check);
-				
-				if($num_check == 0)
-				{
-					
-					$quer4=mysqli_query($db,"INSERT INTO acc_tickets (tic_qr,tic_rfid,tic_user,tic_start,tic_end,tic_access,tic_time,tic_name,tic_valid,tic_version) VALUES ('".$row_tickets->tic_qr."','".$row_tickets->tic_rfid."','".$row_tickets->tic_user."','".$row_tickets->tic_start."','".$row_tickets->tic_end."','".$row_tickets->tic_access."','".$timestamp."','".$row_tickets->tic_name."','".$row_tickets->tic_valid."','".$row_tickets->tic_version."')" );
+				echo "Uploaded ".$i." Scans<br>";
 
-					echo "Download 1 Ticket: - QR:".$row_tickets->tic_qr." - RFID:".$row_tickets->tic_rfid." - User:".$row_tickets->tic_user." - Start:".$row_tickets->tic_start." - End:".$row_tickets->tic_end." - Access:".$row_tickets->tic_access." - Valid:".$row_tickets->tic_valid."<br> - Version:".$row_tickets->tic_version."<br>";
-				
-				}elseif($row_tickets->tic_version > $row_check->tic_version)
-				{
-					$status = "UPDATE acc_tickets SET 
-					tic_qr = '".$row_tickets->tic_qr."',
-					tic_rfid = '".$row_tickets->tic_rfid."',
-					tic_user = '".$row_tickets->tic_user."',
-					tic_start = '".$row_tickets->tic_start."',
-					tic_end = '".$row_tickets->tic_end."',
-					tic_access = '".$row_tickets->tic_access."',
-					tic_time = '".$timestamp."',
-					tic_name = '".$row_tickets->tic_name."',
-					tic_valid = '".$row_tickets->tic_valid."',
-					tic_version = '".$row_tickets->tic_version."'
-					WHERE tic_qr = '".$row_tickets->tic_qr."'";
-					$update = mysqli_query($db,$status);
-					echo "<br>Ticket erfolgreich lokal aktualisiert!";
-					
-				}	
+				$quer3=mysqli_query($db,"UPDATE acc_scans SET sca_upload = '1' WHERE sca_upload = '0'");
+
 			}
 			
-			$ab_tickets_valid = "SELECT * FROM acc_tickets WHERE tic_valid = 10";
-			$er_tickets_valid = mysqli_query($db,$ab_tickets_valid);
-			while($row_valid = mysqli_fetch_object($er_tickets_valid))
+
+// Upload ticket changes to cloud server
+			$url = 'http://twincable.emp-access.de/api_post_tickets.php';
+			$ch = curl_init($url);
+			$i = 0;
+			
+			$ab_upload = "SELECT * FROM acc_tickets WHERE tic_valid = '10'";
+			$er_upload = mysqli_query($db, $ab_upload);
+			while($row_upload = mysqli_fetch_object($er_upload))
 			{
-				$status = "UPDATE tickets SET tic_valid = '0' WHERE tic_qr = '".$row_valid->tic_qr."'";
-				$update = mysqli_query($db_on,$status);
-				echo "<br>Ticket erfolgreich online aktualisiert!";
-				
-				$status = "UPDATE acc_tickets SET tic_valid = '0' WHERE tic_qr = '".$row_valid->tic_qr."'";
+				$data = array(
+					'tic_id' => $row_upload->tic_cloud_id,
+					'tic_valid' => 0
+					);
+					
+				$i++;
+			}
+			
+			$scans = json_encode(array("tickets" => $data));
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $scans);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			$result = curl_exec($ch);
+			curl_close($ch);
+			
+			echo $result;
+			
+			if($result == 1)
+			{
+				echo "Uploaded ".$i." ticket informations<br>";
+
+				$status = "UPDATE acc_tickets SET tic_valid = '0' WHERE tic_valid = '10'";
 				$update = mysqli_query($db,$status);
+
 			}
-			
-
-			// Update user
-			$ab_id_usr = "SELECT * FROM acc_user ORDER BY usr_id DESC LIMIT 1";
-			$er_id_usr = mysqli_query($db,$ab_id_usr);
-			$last_id_usr = mysqli_fetch_object($er_id_usr);
-			$last_id_usr = $last_id_usr->usr_id;
-			if($last_id_usr == "")
-			{
-				$last_id_usr = 0;
-			}
-	
-			$ab_user = "SELECT * FROM user WHERE usr_id > ".$last_id_usr."";
-			$er_user = mysqli_query($db_on,$ab_user);
-			while($row_user = mysqli_fetch_object($er_user))
-			{
-	
-				$quer5=mysqli_query($db,"INSERT INTO acc_user 
-				(usr_rfid, usr_name) VALUES 
-				('".$row_user->usr_rfid."','".$row_user->usr_name."')" );
-
-				echo "Download 1 User<br>";	
-			}
-
-			// Update status
-			$status = "UPDATE pis SET pis_update = ".$timestamp." WHERE pis_id = ".$row_pis->pis_id."";
-			$update = mysqli_query($db_on,$status);
-			
-			// Update status oofline
-			$status = "UPDATE acc_pis SET pis_update = ".$timestamp." WHERE pis_id = ".$row_pis->pis_id."";
-			$update = mysqli_query($db,$status);
-
-
-			// Update pi offline
-			$ab_pis_on = "SELECT * FROM pis WHERE pis_id = ".$row_pis->pis_id."";
-			$er_pis_on = mysqli_query($db_on,$ab_pis_on);
-			$row_pis_on = mysqli_fetch_object($er_pis_on);
-			$status = "UPDATE acc_pis SET 
-			pis_task = ".$row_pis_on->pis_task.",
-			pis_active = ".$row_pis_on->pis_active."
-			WHERE pis_id = ".$row_pis->pis_id."";
-			$update = mysqli_query($db,$status);
 	
 		?>
 
