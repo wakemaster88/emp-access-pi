@@ -21,7 +21,7 @@
 				shell_exec($command);
 
 			}
-			else //Found valid ticket - local
+			elseif($num_pis == 1) //Found valid ticket - local
 			{
 
 				
