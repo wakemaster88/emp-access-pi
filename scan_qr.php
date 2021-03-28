@@ -14,7 +14,7 @@
 				
 				//Add scan into database - local
 				$sql = "INSERT INTO acc_scans (sca_code, sca_location, sca_scan_time, sca_grant)
-				VALUES ('".$scan."', '".$row_pis->pis_id."', '".$timestamp."','0')";
+				VALUES ('".$scan."', '".$row_pis->pis_cloud_id."', '".$timestamp."','0')";
 				$update = mysqli_query($db,$sql);
 
                 $command = escapeshellcmd('python3 /home/pi/Desktop/buzzer_invalid.py');
@@ -32,7 +32,7 @@
 
                 //Add scan into database - local
 				$sql = "INSERT INTO acc_scans (sca_code, sca_location, sca_scan_time, sca_grant)
-				VALUES ('".$scan."', '".$row_pis->pis_id."', '".$timestamp."','".$row_valid->tic_valid."')";
+				VALUES ('".$scan."', '".$row_pis->pis_cloud_id."', '".$timestamp."','".$row_valid->tic_valid."')";
 				$update = mysqli_query($db,$sql);
 				
 				if($row_valid->tic_valid == 1) //Normal valid ticket found - local
@@ -55,9 +55,7 @@
                                 
 				
 				// Open turnstile and give signal - local
-                $command = escapeshellcmd('python3 /home/pi/Desktop/buzzer_valid.py');
-				shell_exec($command);
-                $command = escapeshellcmd('python3 /home/pi/Desktop/relais.py');
+				$command = escapeshellcmd('python3 /home/pi/Desktop/relais.py');
 				shell_exec($command);
 
 			}

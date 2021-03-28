@@ -22,13 +22,11 @@
 
                		//Add scan into database - local
 					$sql = "INSERT INTO acc_scans (sca_code, sca_location, sca_scan_time, sca_grant)
-					VALUES ('WS:".$scan."', '".$row_pis->pis_id."', '".$timestamp."','1')";
+					VALUES ('WS: ".$json[data][value][col_first_name]." ".$json[data][value][col_last_name]." (".$scan.")', '".$row_pis->pis_cloud_id."', '".$timestamp."','1')";
 					$update = mysqli_query($db,$sql);
                                 
 				
 					// Open turnstile and give signal - local
-					$command = escapeshellcmd('python3 /home/pi/Desktop/buzzer_valid.py');
-					shell_exec($command);
 					$command = escapeshellcmd('python3 /home/pi/Desktop/relais.py');
 					shell_exec($command);
 					
@@ -37,7 +35,7 @@
 				
 					//Add scan into database - local
 					$sql = "INSERT INTO acc_scans (sca_code, sca_location, sca_scan_time, sca_grant)
-					VALUES ('".$scan."', '".$row_pis->pis_id."', '".$timestamp."','0')";
+					VALUES ('".$scan."', '".$row_pis->pis_cloud_id."', '".$timestamp."','0')";
 					$update = mysqli_query($db,$sql);
 					
 					$command = escapeshellcmd('python3 /home/pi/Desktop/buzzer_invalid.py');
@@ -47,7 +45,6 @@
 			}
 			elseif($num_pis == 1) //Found valid ticket - local
 			{
-
 				
 				//Open ticket and check valid - local
 				$ab_valid = "SELECT * FROM acc_tickets WHERE tic_rfid = '".$scan."'";
@@ -56,7 +53,7 @@
 
                 //Add scan into database - local
 				$sql = "INSERT INTO acc_scans (sca_code, sca_location, sca_scan_time, sca_grant)
-				VALUES ('".$scan."', '".$row_pis->pis_id."', '".$timestamp."','".$row_valid->tic_valid."')";
+				VALUES ('".$scan."', '".$row_pis->pis_cloud_id."', '".$timestamp."','".$row_valid->tic_valid."')";
 				$update = mysqli_query($db,$sql);
 				
 				if($row_valid->tic_valid == 1) //Normal valid ticket found - local
@@ -79,8 +76,6 @@
                                 
 				
 				// Open turnstile and give signal - local
-                $command = escapeshellcmd('python3 /home/pi/Desktop/buzzer_valid.py');
-				shell_exec($command);
                 $command = escapeshellcmd('python3 /home/pi/Desktop/relais.py');
 				shell_exec($command);
 
