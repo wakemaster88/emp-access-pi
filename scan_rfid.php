@@ -1,5 +1,6 @@
 		<?php
 			
+			$num_relais = "";
 			//Connection to Pi information - local
 			$ab_pis = "SELECT * FROM acc_pis";
 			$er_pis = mysqli_query($db,$ab_pis);
@@ -7,7 +8,7 @@
 			$num_pis = mysqli_num_rows($er_pis);
 			
 			//Looking for valid ticket - local
-			$ab_tickets = "SELECT * FROM acc_tickets WHERE tic_rfid = '".$scan."' AND tic_start <= ".$timestamp." AND tic_end >= ".$timestamp." AND tic_valid >= 1";
+			$ab_tickets = "SELECT * FROM acc_tickets WHERE tic_rfid = '".$scan."' AND tic_start <= ".$timestamp." AND tic_end >= ".$timestamp." AND tic_valid >= ".$valid."";
 			$er_tickets = mysqli_query($db,$ab_tickets);
 			$num_tickets = mysqli_num_rows($er_tickets);
 			
@@ -27,7 +28,7 @@
                                 
 				
 					// Open turnstile and give signal - local
-					$command = escapeshellcmd('python3 /home/pi/Desktop/relais.py');
+					$command = escapeshellcmd('python3 /var/www/html/python_files/relais.py');
 					shell_exec($command);
 					
 				}else
@@ -35,10 +36,10 @@
 				
 					//Add scan into database - local
 					$sql = "INSERT INTO acc_scans (sca_code, sca_location, sca_scan_time, sca_grant)
-					VALUES ('".$scan."', '".$row_pis->pis_cloud_id."', '".$timestamp."','0')";
+					VALUES ('WS: ".$json[data][value][col_first_name]." ".$json[data][value][col_last_name]." (".$scan.")', '".$row_pis->pis_cloud_id."', '".$timestamp."','0')";
 					$update = mysqli_query($db,$sql);
 					
-					$command = escapeshellcmd('python3 /home/pi/Desktop/buzzer_invalid.py');
+					$command = escapeshellcmd('python3 /var/www/html/python_files/buzzer_invalid.py');
 					shell_exec($command);
 				}
 
@@ -64,6 +65,15 @@
 					$update = mysqli_query($db,$sql2);
 					
 				}
+				
+				if($row_valid->tic_valid == 0) //Normal valid ticket found - local
+				{
+					
+					// Update valid temporary to 2 for update in cloud - local
+					$sql2 = "UPDATE acc_tickets SET tic_valid = '11' WHERE tic_rfid = '".$scan."'";
+					$update = mysqli_query($db,$sql2);
+					
+				}
 
                 if($row_valid->tic_valid == 9) //AAA valid ticket found - local
 				{
@@ -73,10 +83,14 @@
 					$update = mysqli_query($db,$sql2);
 					
 				}
-                                
+                
+                if($row_pis->pis_type == 5)
+                {
+                	include('locker_scan.php');  
+                }               
 				
 				// Open turnstile and give signal - local
-                $command = escapeshellcmd('python3 /home/pi/Desktop/relais.py');
+                $command = escapeshellcmd('python3 /var/www/html/python_files/relais'.$num_relais.'.py');
 				shell_exec($command);
 
 			}

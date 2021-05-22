@@ -16,6 +16,13 @@
             if(event.key == 'Enter')
             {
                 var objXMLHttpRequest = new XMLHttpRequest();
+                
+                objXMLHttpRequest.onreadystatechange = function() {
+				if (this.readyState == 4 && this.status == 200) {
+				console.log(this.responseText);
+				}
+    			};
+                
                 objXMLHttpRequest.open("GET", "scan.php?id=" + qr, true);
                 objXMLHttpRequest.send();
                 qr = '';

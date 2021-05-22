@@ -61,9 +61,9 @@
 			//Turnstile cloud opening
 			if($json_pi['pis_task'] == 1)
 			{
-				$command = escapeshellcmd('python3 /home/pi/Desktop/buzzer.py');
+				$command = escapeshellcmd('python3 /var/www/html/python_files/buzzer.py');
 				shell_exec($command);
-				$command = escapeshellcmd('python3 /home/pi/Desktop/relais.py');
+				$command = escapeshellcmd('python3 /var/www/html/python_files/relais.py');
 				shell_exec($command);
 				
 				// Update local pi information
@@ -218,6 +218,41 @@
 				echo "Uploaded ".$i." ticket informations<br>";
 
 				$status = "UPDATE acc_tickets SET tic_valid = '0' WHERE tic_valid = '10'";
+				$update = mysqli_query($db,$status);
+
+			}
+			
+			// Upload ticket changes to cloud server
+			$url = 'http://twincable.emp-access.de/api_post_tickets.php';
+			$ch = curl_init($url);
+			$i = 0;
+			
+			$ab_upload = "SELECT * FROM acc_tickets WHERE tic_valid = '11'";
+			$er_upload = mysqli_query($db, $ab_upload);
+			while($row_upload = mysqli_fetch_object($er_upload))
+			{
+				$data = array(
+					'tic_id' => $row_upload->tic_cloud_id,
+					'tic_valid' => 0
+					);
+					
+				$i++;
+			}
+			
+			$scans = json_encode(array("tickets" => $data));
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $scans);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			$result = curl_exec($ch);
+			curl_close($ch);
+			
+			echo $result;
+			
+			if($result == 1)
+			{
+				echo "Uploaded ".$i." ticket informations<br>";
+
+				$status = "UPDATE acc_tickets SET tic_valid = '".$row_pis->pis_again."' WHERE tic_valid = '11'";
 				$update = mysqli_query($db,$status);
 
 			}

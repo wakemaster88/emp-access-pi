@@ -17,5 +17,4 @@
 	{ 
 		$database_info = "LOCAL MYSQL DATABASE";
 	}
-
 ?>
