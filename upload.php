@@ -19,7 +19,7 @@
 				$access = $row_pis->pis_in;
 			}else
 			{
-				$access = $row_pis->pis_in;
+				$access = $row_pis->pis_out;
 			}
 			
 			$ab_since = "SELECT * FROM acc_tickets ORDER BY tic_version DESC LIMIT 1";

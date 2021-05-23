@@ -2,7 +2,7 @@
 	
 	//Database connection - local
 	$servername = "localhost:3306";
-	$username = "phpmyadmin2";
+	$username = "phpmyadmin";
 	$password = "pi";
 	$database = "emp_access";
 

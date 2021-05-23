@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 import time
 GPIO.setmode(GPIO.BCM) # GPIO Nummern statt Board Nummern
 current_time = time.time()
-time_delay = current_time + 5
+time_delay = current_time + 1
  
 RELAIS_1_GPIO = 24
 GPIO.setup(RELAIS_1_GPIO, GPIO.OUT) # GPIO Modus zuweisen
