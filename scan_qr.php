@@ -30,10 +30,19 @@
 				$ab_valid = "SELECT * FROM acc_tickets WHERE tic_qr = '".$scan."'";
 				$er_valid = mysqli_query($db,$ab_valid);
 				$row_valid = mysqli_fetch_object($er_valid);
+				
+				if($row_valid->tic_valid == 0 && $valid == 0)
+				{
+					$tictoc = 1;
+				}
+				else
+				{
+					$tictoc = $row_valid->tic_valid;
+				}
 
                 //Add scan into database - local
 				$sql = "INSERT INTO acc_scans (sca_code, sca_location, sca_scan_time, sca_grant)
-				VALUES ('".$scan."', '".$row_pis->pis_cloud_id."', '".$timestamp."','".$row_valid->tic_valid."')";
+				VALUES ('".$scan."', '".$row_pis->pis_cloud_id."', '".$timestamp."','".$tictoc"')";
 				$update = mysqli_query($db,$sql);
 				
 				if($row_valid->tic_valid == 1) //Normal valid ticket found - local

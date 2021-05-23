@@ -233,7 +233,7 @@
 			{
 				$data = array(
 					'tic_id' => $row_upload->tic_cloud_id,
-					'tic_valid' => 0
+					'tic_valid' => $row_pis->pis_again
 					);
 					
 				$i++;

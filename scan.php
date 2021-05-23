@@ -31,9 +31,11 @@
 		if($row_pis->pis_in == 0)
 		{
 			$valid = 0;
+			$invalid = 1;
 		}else
 		{
 			$valid = 1;
+			$invalid = 0;
 		}
 		
 		if(is_numeric($scan) && strlen($scan) == 10)
