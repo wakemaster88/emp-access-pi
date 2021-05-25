@@ -26,6 +26,7 @@ $interface_type = "gate";
 // RFID Frank: 2948834538
 //$rfid = 1002193100;
 $rfid = $scan;
+$rfid *= 1;
 //$rfid = $_GET['scan'];
 
 $json = file_get_contents('https://'.$account.'.wakesys.com/files_for_admin_and_browser/sql_query/query_operator.php?interface='.$interface.'&interface_id='.$interface_id.'&controller_interface_type='.$interface_type.'&id='.$rfid.'');

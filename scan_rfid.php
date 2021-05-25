@@ -25,6 +25,12 @@
 					$sql = "INSERT INTO acc_scans (sca_code, sca_location, sca_scan_time, sca_grant)
 					VALUES ('WS: ".$json[data][value][col_first_name]." ".$json[data][value][col_last_name]." (".$scan.")', '".$row_pis->pis_cloud_id."', '".$timestamp."','1')";
 					$update = mysqli_query($db,$sql);
+					
+					//Create Wakesys Ticket in EMP
+					/*$timestamp = time();
+					$bis = $json[data][value][next_ticket][next_ticket];
+					$bis = $bis + 30*60;
+					$result = mysqli_query($db,"INSERT INTO tickets (tic_name, tic_rfid, tic_start, tic_end, tic_access, tic_valid) VALUES ('WS: ".$json[data][value][col_first_name]." ".$json[data][value][col_last_name]."', '".$scan."', '".$timestamp."', '".$bis."', '1', '0')");*/
                                 
 				
 					// Open turnstile and give signal - local
