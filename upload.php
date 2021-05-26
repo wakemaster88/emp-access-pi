@@ -76,7 +76,7 @@
 
 
 // Upload pi information to cloud server
-			$url = 'http://twincable.emp-access.de/api_post_pis.php';
+			$url = 'http://'.$row_pis->pis_location.'.emp-access.de/api_post_pis.php';
 			$ch = curl_init($url);
 			
 			$ab_upload = "SELECT * FROM acc_pis";
@@ -152,7 +152,7 @@
 				
 
 // Upload scans to cloud server
-			$url = 'http://twincable.emp-access.de/api_post_scans.php';
+			$url = 'http://'.$row_pis->pis_location.'.emp-access.de/api_post_scans.php';
 			$ch = curl_init($url);
 			$i = 0;
 			
@@ -188,7 +188,7 @@
 			
 
 // Upload ticket changes to cloud server
-			$url = 'http://twincable.emp-access.de/api_post_tickets.php';
+			$url = 'http://'.$row_pis->pis_location.'.emp-access.de/api_post_tickets.php';
 			$ch = curl_init($url);
 			$i = 0;
 			
@@ -223,7 +223,7 @@
 			}
 			
 			// Upload ticket changes to cloud server
-			$url = 'http://twincable.emp-access.de/api_post_tickets.php';
+			$url = 'http://'.$row_pis->pis_location.'.emp-access.de/api_post_tickets.php';
 			$ch = curl_init($url);
 			$i = 0;
 			

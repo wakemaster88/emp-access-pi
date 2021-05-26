@@ -12,7 +12,7 @@
 	//Check if controller is connected and setup is done		
 	if($num_pis == 0)
 	{
-		$pis = explode("@", $scan);
+		$pis = explode('"', $scan);
 		$sql = "INSERT INTO acc_pis (pis_location, pis_cloud_id, pis_token)
 		VALUES ('".$pis[0]."','".$pis[1]."','".$pis[2]."')";
 		$update = mysqli_query($db,$sql);
