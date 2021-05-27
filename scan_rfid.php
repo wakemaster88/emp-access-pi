@@ -12,11 +12,12 @@
 			$er_tickets = mysqli_query($db,$ab_tickets);
 			$num_tickets = mysqli_num_rows($er_tickets);
 			
-			if($num_tickets == 0 && $num_pis == 1) //No valid ticket found - local
+			if($num_tickets == 0 && $num_pis == 1 && $row_pis->pis_location == 'twincable') //No valid ticket found - local
 			{	
 				
 				// Include Wakesys tickets
 				include('api_wakesys.php');
+
 				
 				if($ticket_wakesys == 1)
 				{
@@ -49,6 +50,15 @@
 					shell_exec($command);
 				}
 
+			}elseif($num_tickets == 0 && $num_pis == 1)
+			{
+				//Add scan into database - local
+					$sql = "INSERT INTO acc_scans (sca_code, sca_location, sca_scan_time, sca_grant)
+					VALUES ('".$json[data][value][col_first_name]." ".$json[data][value][col_last_name]."".$scan."', '".$row_pis->pis_cloud_id."', '".$timestamp."','0')";
+					$update = mysqli_query($db,$sql);
+					
+					$command = escapeshellcmd('python3 /var/www/html/python_files/buzzer_invalid.py');
+					shell_exec($command);
 			}
 			elseif($num_pis == 1) //Found valid ticket - local
 			{

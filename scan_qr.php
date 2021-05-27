@@ -42,7 +42,7 @@
 
                 //Add scan into database - local
 				$sql = "INSERT INTO acc_scans (sca_code, sca_location, sca_scan_time, sca_grant)
-				VALUES ('".$scan."', '".$row_pis->pis_cloud_id."', '".$timestamp."','".$tictoc"')";
+				VALUES ('".$scan."', '".$row_pis->pis_cloud_id."', '".$timestamp."','".$tictoc."')";
 				$update = mysqli_query($db,$sql);
 				
 				if($row_valid->tic_valid == 1) //Normal valid ticket found - local

@@ -5,6 +5,7 @@
 	$username = "phpmyadmin";
 	$password = "pi";
 	$database = "emp_access";
+	$firmware = 2;
 
 	//Create connection - local
 	$db = new mysqli($servername, $username, $password, $database);

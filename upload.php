@@ -51,7 +51,8 @@
 				pis_active = '".$json_pi['pis_active']."',
 				pis_version = '".$json_pi['pis_version']."',
 				pis_out = '".$json_pi['pis_out']."',
-				pis_task = '".$json_pi['pis_task']."'
+				pis_task = '".$json_pi['pis_task']."',
+				pis_firmware = '".$firmware."'
 				WHERE pis_cloud_id = '".$json_pi['pis_id']."'";
 				$update = mysqli_query($db,$status);
 				
